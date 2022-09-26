@@ -1,155 +1,107 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/scheduler.dart' show timeDilation;
+import 'package:provider/provider.dart';
+import 'todoitemlist.dart';
+import 'view.dart';
+import 'classes.dart';
 
-class Todo {
-  Todo({required this.name, required this.checked});
-  final String name;
-  bool checked;
-}
+void main() {
+  var state = TodoState();
 
-class TodoItem extends StatelessWidget {
-  TodoItem({
-    required this.todo,
-    required this.onTodoChanged,
-  }) : super(key: ObjectKey(todo));
-
-  final Todo todo;
-  final onTodoChanged;
-
-  TextStyle? _getTextStyle(bool checked) {
-    if (!checked) return null;
-
-    return const TextStyle(
-      fontStyle: FontStyle.normal,
-      color: Colors.black54,
-      fontSize: 16.0,
-      decoration: TextDecoration.lineThrough,
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return ListTile(
-      onTap: () {
-        onTodoChanged(todo);
-      },
-      trailing: Icon(Icons.delete),
-      title: Text(todo.name, style: _getTextStyle(todo.checked)),
-    );
-  }
-}
-
-class TodoList extends StatefulWidget {
-  @override
-  _TodoListState createState() => new _TodoListState();
-}
-
-class _TodoListState extends State<TodoList> {
-  final TextEditingController _textFieldController = TextEditingController();
-  final List<Todo> _todos = <Todo>[];
-
-  @override
-  Widget build(BuildContext context) {
-    var floatingActionButton;
-    return Scaffold(
-        appBar: AppBar(
-          title: const Text('Todo list TIG169'),
-        ),
-        body: ListView(
-          padding: const EdgeInsets.symmetric(vertical: 12.0),
-          children: _todos.map((Todo todo) {
-            return TodoItem(
-              todo: todo,
-              onTodoChanged: _handleTodoChange,
-            );
-          }).toList(),
-        ),
-        floatingActionButton: FloatingActionButton(
-            child: Icon(Icons.arrow_forward_ios),
-            onPressed: () => Navigator.push(context,
-                MaterialPageRoute(builder: (context) => SecondView()))),
-        backgroundColor: Color.fromARGB(255, 214, 219, 218),
-        floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-        bottomNavigationBar: BottomNavigationBar(
-          items: const <BottomNavigationBarItem>[
-            BottomNavigationBarItem(
-              icon: Icon(null),
-              label: '',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.add),
-              label: 'LÄGG TILL I LISTAN',
-            ),
-          ],
-          onTap: (ValueKey) => _displayDialog(),
-          backgroundColor: Color.fromARGB(255, 236, 230, 215),
-        ));
-  }
-
-  void _handleTodoChange(Todo todo) {
-    setState(() {
-      todo.checked = !todo.checked;
-    });
-  }
-
-// create a function so that items can be removed from the list by pressing the delete button
-
-  void _removeTodoItem(Todo todo) {
-    setState(() {
-      _todos.remove(todo);
-    });
-  }
-
-  void _addTodoItem(String name) {
-    setState(() {
-      _todos.add(Todo(name: name, checked: false));
-    });
-    _textFieldController.clear();
-  }
-
-  Future<void> _displayDialog() async {
-    return showDialog<void>(
-      context: context,
-      barrierDismissible: false,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Skriv något att göra'),
-          content: TextField(
-            controller: _textFieldController,
-            decoration: const InputDecoration(hintText: 'Skriv nästa att-göra'),
-          ),
-          actions: <Widget>[
-            TextButton(
-              child: const Text('Lägg till'),
-              onPressed: () {
-                Navigator.of(context).pop();
-                _addTodoItem(_textFieldController.text);
-              },
-            ),
-          ],
-        );
-      },
-    );
-  }
+  runApp(
+    ChangeNotifierProvider(create: (context) => state, child: const TodoApp()),
+  );
 }
 
 class TodoApp extends StatelessWidget {
+  const TodoApp({Key? key}) : super(key: key);
+
   @override
   Widget build(BuildContext context) {
-    return new MaterialApp(
-      title: 'Todo list',
-      home: new TodoList(),
+    return MaterialApp(
+      title: 'Todo List',
+      home: const ListView(title: 'Lägg till saker här nedanför'),
+      debugShowCheckedModeBanner: false,
     );
   }
 }
 
-class SecondView extends StatelessWidget {
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text("Hämta info från nätet")),
-      body: const Center(),
-    );
-  }
+class ListView extends StatefulWidget {
+  const ListView({Key? key, required this.title}) : super(key: key);
+
+  final String title;
+
+  @override
+  State<ListView> createState() => _ListViewState();
 }
 
-void main() => runApp(new TodoApp());
+class _ListViewState extends State<ListView> {
+  @override
+  Widget build(BuildContext context) => Scaffold(
+        appBar: AppBar(
+          backgroundColor: Colors.black,
+          title: const Text("Todo list"),
+          centerTitle: true,
+          actions: [
+            PopupMenuButton(
+                onSelected: (String value) {
+                  Provider.of<TodoState>(context, listen: false)
+                      .filterTodo(value);
+                },
+                itemBuilder: (context) => [
+                      const PopupMenuItem(
+                          value: 'All', child: Text('Visa alla')),
+                      const PopupMenuItem(
+                          value: 'Completed', child: Text('Visa klara')),
+                      const PopupMenuItem(
+                          value: 'Incomplete', child: Text('Visa inte klara'))
+                    ]),
+          ],
+        ),
+        body: Consumer<TodoState>(
+            builder: (context, state, child) =>
+                TodoList(filterList: _filterList(state.list, state.filterBy))),
+        floatingActionButton: FloatingActionButton(
+          backgroundColor: Color.fromARGB(255, 214, 112, 112),
+          child: Icon(
+            Icons.add_outlined,
+          ),
+          onPressed: () async {
+            var newtask = await Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (context) => SecondView(TodoListState(
+                          title: '',
+                        ))));
+            if (newtask != null) {
+              Provider.of<TodoState>(context, listen: false).addTodo(newtask);
+            }
+          },
+          hoverColor: Color.fromARGB(255, 107, 112, 182),
+        ),
+        floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+      );
+
+  List<TodoListState> _filterList(List<TodoListState> list, String filterBy) {
+    List<TodoListState> filteredList = [];
+    filteredList.clear();
+
+    if (filterBy == "Completed") {
+      list.forEach((TodoListState element) {
+        if (element.value == true) {
+          filteredList.add(element);
+        }
+      });
+      return filteredList;
+    }
+
+    if (filterBy == "Incompleted") {
+      for (var element in list) {
+        if (element.value == false) {
+          filteredList.add(element);
+        }
+      }
+      return filteredList;
+    }
+    return list;
+  }
+}
