@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'todoitemlist.dart';
 import 'view.dart';
 import 'classes.dart';
+import 'package:http/http.dart' as http;
 
 void main() {
   var state = TodoState();
@@ -61,6 +62,7 @@ class _ListViewState extends State<ListView> {
             builder: (context, state, child) =>
                 TodoList(filterList: _filterList(state.list, state.filterBy))),
         floatingActionButton: FloatingActionButton(
+          elevation: 12.0,
           backgroundColor: Color.fromARGB(255, 214, 112, 112),
           child: Icon(
             Icons.add_outlined,
