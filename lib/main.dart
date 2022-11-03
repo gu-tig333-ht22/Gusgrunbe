@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'todoitemlist.dart';
-import 'view.dart';
-import 'classes.dart';
-import 'package:http/http.dart' as http;
+import 'constants.dart';
+import 'todolist.dart';
+import 'view2.dart';
+import 'models.dart';
 
 void main() {
   var state = TodoState();
@@ -21,7 +21,6 @@ class TodoApp extends StatelessWidget {
     return MaterialApp(
       title: 'Todo List',
       home: const ListView(title: 'Lägg till saker här nedanför'),
-      debugShowCheckedModeBanner: false,
     );
   }
 }
@@ -45,8 +44,7 @@ class _ListViewState extends State<ListView> {
           actions: [
             PopupMenuButton(
                 onSelected: (String value) {
-                  Provider.of<TodoState>(context, listen: false)
-                      .filterTodo(value);
+                  Provider.of<TodoState>(context, listen: false).filter(value);
                 },
                 itemBuilder: (context) => [
                       const PopupMenuItem(
@@ -62,43 +60,42 @@ class _ListViewState extends State<ListView> {
             builder: (context, state, child) =>
                 TodoList(filterList: _filterList(state.list, state.filterBy))),
         floatingActionButton: FloatingActionButton(
-          elevation: 12.0,
-          backgroundColor: Color.fromARGB(255, 214, 112, 112),
-          child: Icon(
-            Icons.add_outlined,
+          backgroundColor: Colors.grey,
+          child: const Icon(
+            Icons.add,
           ),
           onPressed: () async {
-            var newtask = await Navigator.push(
+            var newToDo = await Navigator.push(
                 context,
                 MaterialPageRoute(
-                    builder: (context) => SecondView(TodoListState(
+                    builder: (context) => SecondView(todoItemState(
+                          id: '',
                           title: '',
+                          done: false,
                         ))));
-            if (newtask != null) {
-              Provider.of<TodoState>(context, listen: false).addTodo(newtask);
+            if (newToDo != null) {
+              Provider.of<TodoState>(context, listen: false).addTodo(newToDo);
             }
           },
-          hoverColor: Color.fromARGB(255, 107, 112, 182),
         ),
-        floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
       );
 
-  List<TodoListState> _filterList(List<TodoListState> list, String filterBy) {
-    List<TodoListState> filteredList = [];
+  List<todoItemState> _filterList(List<todoItemState> list, String filterBy) {
+    List<todoItemState> filteredList = [];
     filteredList.clear();
 
-    if (filterBy == "Completed") {
-      list.forEach((TodoListState element) {
-        if (element.value == true) {
+    if (filterBy == "Klar") {
+      for (var element in list) {
+        if (element.done == true) {
           filteredList.add(element);
         }
-      });
+      }
       return filteredList;
     }
 
-    if (filterBy == "Incompleted") {
+    if (filterBy == "Inte") {
       for (var element in list) {
-        if (element.value == false) {
+        if (element.done == false) {
           filteredList.add(element);
         }
       }

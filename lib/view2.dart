@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
-import 'classes.dart';
+import 'constants.dart';
+import 'models.dart';
 
 class SecondView extends StatefulWidget {
-  final TodoListState todoItem;
+  final todoItemState toDoItem;
 
-  const SecondView(this.todoItem);
+  const SecondView(this.toDoItem, {super.key});
 
   @override
   State<StatefulWidget> createState() {
-    return SecondViewState(todoItem);
+    return SecondViewState(toDoItem);
   }
 }
 
@@ -16,9 +17,10 @@ class SecondViewState extends State<SecondView> {
   late String title;
   late TextEditingController textEditingController;
 
-  SecondViewState(TodoListState todoItem) {
+  SecondViewState(todoItemState todoItem) {
     title = todoItem.title;
     textEditingController = TextEditingController();
+
     textEditingController.addListener(() {
       setState(() {
         title = textEditingController.text;
@@ -48,14 +50,13 @@ class SecondViewState extends State<SecondView> {
                 )),
           ),
         ),
-        body: _makeTodo());
+        body: _toDoinputbox());
     return MaterialApp(
       home: scaffold,
-      debugShowCheckedModeBanner: false,
     );
   }
 
-  _makeTodo() {
+  _toDoinputbox() {
     return Column(children: [
       Container(
         margin: const EdgeInsets.only(left: 25, right: 25, top: 30),
@@ -73,7 +74,8 @@ class SecondViewState extends State<SecondView> {
                   Color.fromARGB(255, 39, 34, 34))),
           child: Text("Lägg till todo-sak"),
           onPressed: () {
-            Navigator.pop(context, TodoListState(title: title));
+            Navigator.pop(
+                context, todoItemState(id: '', title: title, done: false));
           }),
     ]);
   }
